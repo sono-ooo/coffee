@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AR Marker Persistence</title>
+  <!-- A-Frame and AR.js from CDN -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body style="margin: 0; overflow: hidden;">
   <a-scene embedded arjs="sourceType: webcam;">
     <!-- ARマーカー -->
-    <a-marker type="pattern" url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/three.js/examples/marker-training/examples/pattern-files/hiro.patt">
+    <a-marker type="pattern" url="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/examples/marker-training/examples/pattern-files/hiro.patt">
       <!-- マーカー上のオブジェクト -->
       <a-box position="0 0.5 0" material="color: blue" visible="true" id="trackedObject"></a-box>
     </a-marker>
