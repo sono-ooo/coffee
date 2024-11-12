@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multiple AR Markers with Persistence</title>
+  <title>AR Marker Persistence Example</title>
   <!-- A-Frame and AR.js from CDN -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
@@ -16,7 +16,7 @@
     <!-- マーカー2 -->
     <a-marker type="pattern" url="./pattern-files/kanji.patt" id="marker2"></a-marker>
 
-    <!-- 独立したオブジェクト -->
+    <!-- マーカーとは独立したオブジェクトを定義 -->
     <a-box position="0 0.5 0" material="color: blue" visible="false" id="object1"></a-box>
     <a-sphere position="0 0.5 0" material="color: red" visible="false" id="object2"></a-sphere>
 
@@ -33,33 +33,19 @@
     markers.forEach(({ markerId, objectId }) => {
       const marker = document.querySelector(`#${markerId}`);
       const object = document.querySelector(`#${objectId}`);
-      let lastPosition = null;
-      let lastRotation = null;
+      let isPositionSet = false; // 位置を一度だけセットするためのフラグ
 
+      // マーカーが見つかったときのイベント
       marker.addEventListener("markerFound", () => {
-        object.setAttribute("visible", "true");
-      });
-
-      marker.addEventListener("markerLost", () => {
-        // マーカーが消えたら、最後の位置と回転を保持
-        if (lastPosition && lastRotation) {
-          object.setAttribute("position", lastPosition);
-          object.setAttribute("rotation", lastRotation);
+        if (!isPositionSet) {
+          // マーカーの位置と回転を取得してオブジェクトに適用
+          const position = marker.object3D.position.clone();
+          const rotation = marker.object3D.rotation.clone();
+          object.setAttribute("position", position);
+          object.setAttribute("rotation", rotation);
+          object.setAttribute("visible", "true");
+          isPositionSet = true; // 位置と回転のセットを一度だけ行う
         }
-      });
-
-      // マーカーの位置と回転を継続的に更新
-      marker.addEventListener("markerFound", () => {
-        const intervalId = setInterval(() => {
-          if (marker.object3D.visible) {
-            lastPosition = marker.object3D.position.clone();
-            lastRotation = marker.object3D.rotation.clone();
-            object.setAttribute("position", lastPosition);
-            object.setAttribute("rotation", lastRotation);
-          } else {
-            clearInterval(intervalId); // マーカーが見えなくなったら更新を停止
-          }
-        }, 100); // 更新間隔
       });
     });
   </script>
