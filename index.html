@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Multiple AR Markers with Persistence</title>
-  <!-- A-FrameとAR.jsをCDNから読み込み -->
+  <!-- A-Frame and AR.js from CDN -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
 </head>
@@ -25,6 +25,7 @@
   </a-scene>
 
   <script>
+    // 複数のマーカーと対応するオブジェクトの設定
     const markers = [
       { markerId: "marker1", objectId: "object1" },
       { markerId: "marker2", objectId: "object2" }
@@ -33,18 +34,24 @@
     markers.forEach(({ markerId, objectId }) => {
       const marker = document.querySelector(`#${markerId}`);
       const object = document.querySelector(`#${objectId}`);
+      let lastPosition = null;
+      let lastRotation = null;
 
+      // マーカーが見つかったときのイベント
       marker.addEventListener("markerFound", () => {
         object.setAttribute("visible", "true");
       });
 
+      // マーカーが見えなくなったときのイベント
       marker.addEventListener("markerLost", () => {
-        const position = object.getAttribute("position");
-        const rotation = object.getAttribute("rotation");
+        // オブジェクトの最後の位置と回転を保存
+        lastPosition = object.getAttribute("position");
+        lastRotation = object.getAttribute("rotation");
 
-        object.setAttribute("visible", "true");  // 表示を維持
-        object.setAttribute("position", position);
-        object.setAttribute("rotation", rotation);
+        // オブジェクトの表示を維持し、位置と回転を固定
+        object.setAttribute("visible", "true");
+        object.setAttribute("position", lastPosition);
+        object.setAttribute("rotation", lastRotation);
       });
     });
   </script>
