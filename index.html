@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Marker Persistence</title>
-  <!-- A-Frame and AR.js from CDN -->
+  <title>Multiple AR Markers with Persistence</title>
+  <!-- A-FrameとAR.jsをCDNから読み込み -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
 </head>
 <body style="margin: 0; overflow: hidden;">
   <a-scene embedded arjs="sourceType: webcam;">
-    <!-- ARマーカー -->
-    <a-marker type="pattern" url="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/three.js/examples/marker-training/examples/pattern-files/hiro.patt">
-      <!-- マーカー上のオブジェクト -->
-      <a-box position="0 0.5 0" material="color: blue" visible="true" id="trackedObject"></a-box>
+    <!-- マーカー1 -->
+    <a-marker type="pattern" url="./pattern-files/hiro.patt" id="marker1">
+      <a-box position="0 0.5 0" material="color: blue" visible="true" id="object1"></a-box>
+    </a-marker>
+
+    <!-- マーカー2 -->
+    <a-marker type="pattern" url="./pattern-files/kanji.patt" id="marker2">
+      <a-sphere position="0 0.5 0" material="color: red" visible="true" id="object2"></a-sphere>
     </a-marker>
 
     <!-- カメラ -->
@@ -21,21 +25,27 @@
   </a-scene>
 
   <script>
-    const marker = document.querySelector("a-marker");
-    const object = document.querySelector("#trackedObject");
+    const markers = [
+      { markerId: "marker1", objectId: "object1" },
+      { markerId: "marker2", objectId: "object2" }
+    ];
 
-    marker.addEventListener("markerFound", () => {
-      object.setAttribute("visible", "true");
-    });
+    markers.forEach(({ markerId, objectId }) => {
+      const marker = document.querySelector(`#${markerId}`);
+      const object = document.querySelector(`#${objectId}`);
 
-    marker.addEventListener("markerLost", () => {
-      // マーカーが見えなくなったら位置を固定し、表示を維持
-      const position = object.getAttribute("position");
-      const rotation = object.getAttribute("rotation");
+      marker.addEventListener("markerFound", () => {
+        object.setAttribute("visible", "true");
+      });
 
-      object.setAttribute("visible", "true");  // 表示を維持
-      object.setAttribute("position", position);
-      object.setAttribute("rotation", rotation);
+      marker.addEventListener("markerLost", () => {
+        const position = object.getAttribute("position");
+        const rotation = object.getAttribute("rotation");
+
+        object.setAttribute("visible", "true");  // 表示を維持
+        object.setAttribute("position", position);
+        object.setAttribute("rotation", rotation);
+      });
     });
   </script>
 </body>
