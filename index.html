@@ -3,51 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Marker Persistence Example</title>
-  <!-- A-Frame and AR.js from CDN -->
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
+  <title>AR Object Recognition and Fixation</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #result {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      font-size: 18px;
+      border-radius: 5px;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr"></script>
 </head>
-<body style="margin: 0; overflow: hidden;">
-  <a-scene embedded arjs="sourceType: webcam;">
-    <!-- マーカー1 -->
-    <a-marker type="pattern" url="./pattern-files/hiro.patt" id="marker1"></a-marker>
-
-    <!-- マーカー2 -->
-    <a-marker type="pattern" url="./pattern-files/kanji.patt" id="marker2"></a-marker>
-
-    <!-- マーカーとは独立したオブジェクトを定義 -->
-    <a-box position="0 0.5 0" material="color: blue" visible="false" id="object1"></a-box>
-    <a-sphere position="0 0.5 0" material="color: red" visible="false" id="object2"></a-sphere>
-
-    <!-- カメラ -->
-    <a-entity camera></a-entity>
-  </a-scene>
+<body>
+  <video id="video" autoplay></video>
+  <canvas id="canvas"></canvas>
+  <div id="result">Scanning for QR Code...</div>
 
   <script>
-    const markers = [
-      { markerId: "marker1", objectId: "object1" },
-      { markerId: "marker2", objectId: "object2" }
-    ];
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const result = document.getElementById('result');
 
-    markers.forEach(({ markerId, objectId }) => {
-      const marker = document.querySelector(`#${markerId}`);
-      const object = document.querySelector(`#${objectId}`);
-      let isPositionSet = false; // 位置を一度だけセットするためのフラグ
+    let scene, camera, renderer;
+    let scannedObjects = {}; // 認識済みのオブジェクトを記録
 
-      // マーカーが見つかったときのイベント
-      marker.addEventListener("markerFound", () => {
-        if (!isPositionSet) {
-          // マーカーの位置と回転を取得してオブジェクトに適用
-          const position = marker.object3D.position.clone();
-          const rotation = marker.object3D.rotation.clone();
-          object.setAttribute("position", position);
-          object.setAttribute("rotation", rotation);
-          object.setAttribute("visible", "true");
-          isPositionSet = true; // 位置と回転のセットを一度だけ行う
+    // Three.jsの初期化
+    function initThree() {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
+      camera.position.set(0, 1.6, 0); // 仮想カメラの初期位置
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+      light.position.set(0, 20, 0);
+      scene.add(light);
+
+      animate();
+    }
+
+    // Three.jsのレンダリングループ
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    // カメラの起動
+    async function startCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      video.srcObject = stream;
+      scanQRCode();
+    }
+
+    // QRコードのスキャン
+    async function scanQRCode() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+
+      if (qrCode) {
+        result.textContent = `QR Code: ${qrCode.data}`;
+        console.log('QR Code detected:', qrCode.data);
+
+        // QRコードの内容を解析してオブジェクトを配置
+        const objectData = parseQRCodeData(qrCode.data);
+        if (objectData) {
+          addObjectToScene(objectData);
         }
-      });
-    });
+      } else {
+        result.textContent = 'Scanning for QR Code...';
+      }
+
+      requestAnimationFrame(scanQRCode);
+    }
+
+    // QRコードデータをパース
+    function parseQRCodeData(data) {
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.id && parsed.type) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Invalid QR Code data:', e);
+      }
+      return null;
+    }
+
+    // オブジェクトをシーンに追加
+    function addObjectToScene(data) {
+      if (scannedObjects[data.id]) return; // 同じIDのオブジェクトは1つだけ配置
+
+      let geometry, material;
+
+      if (data.type === 'cube') {
+        geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+      } else if (data.type === 'sphere') {
+        geometry = new THREE.SphereGeometry(0.2, 32, 32);
+      } else {
+        console.warn('Unknown object type:', data.type);
+        return;
+      }
+
+      material = new THREE.MeshStandardMaterial({ color: data.color || 0x00ff00 });
+      const mesh = new THREE.Mesh(geometry, material);
+
+      mesh.position.set(data.x || 0, data.y || 0, data.z || 0);
+      scene.add(mesh);
+
+      scannedObjects[data.id] = mesh;
+      console.log(`Added ${data.type} at ${JSON.stringify(data)}`);
+    }
+
+    initThree();
+    startCamera();
   </script>
 </body>
 </html>
