@@ -3,133 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Object Recognition and Fixation</title>
+  <title>AR.js with Image Targets</title>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
-    video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    #result {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 10px;
-      font-size: 18px;
-      border-radius: 5px;
-    }
+    a-scene { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr"></script>
 </head>
 <body>
-  <video id="video" autoplay></video>
-  <canvas id="canvas"></canvas>
-  <div id="result">Scanning for QR Code...</div>
+  <a-scene embedded arjs="sourceType: webcam;">
+    <!-- QRコードや画像ターゲットの認識 -->
+    <a-marker-camera preset="hiro"></a-marker-camera>
 
-  <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const result = document.getElementById('result');
-
-    let scene, camera, renderer;
-    let scannedObjects = {}; // 認識済みのオブジェクトを記録
-
-    // Three.jsの初期化
-    function initThree() {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
-
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 1000);
-      camera.position.set(0, 1.6, 0); // 仮想カメラの初期位置
-
-      const light = new THREE.HemisphereLight(0xffffff, 0x444444);
-      light.position.set(0, 20, 0);
-      scene.add(light);
-
-      animate();
-    }
-
-    // Three.jsのレンダリングループ
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-
-    // カメラの起動
-    async function startCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      video.srcObject = stream;
-      scanQRCode();
-    }
-
-    // QRコードのスキャン
-    async function scanQRCode() {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
-
-      if (qrCode) {
-        result.textContent = `QR Code: ${qrCode.data}`;
-        console.log('QR Code detected:', qrCode.data);
-
-        // QRコードの内容を解析してオブジェクトを配置
-        const objectData = parseQRCodeData(qrCode.data);
-        if (objectData) {
-          addObjectToScene(objectData);
-        }
-      } else {
-        result.textContent = 'Scanning for QR Code...';
-      }
-
-      requestAnimationFrame(scanQRCode);
-    }
-
-    // QRコードデータをパース
-    function parseQRCodeData(data) {
-      try {
-        const parsed = JSON.parse(data);
-        if (parsed.id && parsed.type) {
-          return parsed;
-        }
-      } catch (e) {
-        console.error('Invalid QR Code data:', e);
-      }
-      return null;
-    }
-
-    // オブジェクトをシーンに追加
-    function addObjectToScene(data) {
-      if (scannedObjects[data.id]) return; // 同じIDのオブジェクトは1つだけ配置
-
-      let geometry, material;
-
-      if (data.type === 'cube') {
-        geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-      } else if (data.type === 'sphere') {
-        geometry = new THREE.SphereGeometry(0.2, 32, 32);
-      } else {
-        console.warn('Unknown object type:', data.type);
-        return;
-      }
-
-      material = new THREE.MeshStandardMaterial({ color: data.color || 0x00ff00 });
-      const mesh = new THREE.Mesh(geometry, material);
-
-      mesh.position.set(data.x || 0, data.y || 0, data.z || 0);
-      scene.add(mesh);
-
-      scannedObjects[data.id] = mesh;
-      console.log(`Added ${data.type} at ${JSON.stringify(data)}`);
-    }
-
-    initThree();
-    startCamera();
-  </script>
+    <!-- 3Dオブジェクトの配置 -->
+    <a-entity id="dynamicObject" geometry="primitive: box; height: 0.5; width: 0.5; depth: 0.5;" material="color: blue;"></a-entity>
+  </a-scene>
 </body>
 </html>
