@@ -3,21 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR.js with Image Targets</title>
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
+  <title>WebXR Anchors</title>
   <style>
     body { margin: 0; overflow: hidden; }
-    a-scene { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    canvas { width: 100%; height: 100%; display: block; }
   </style>
 </head>
 <body>
-  <a-scene embedded arjs="sourceType: webcam;">
-    <!-- QRコードや画像ターゲットの認識 -->
-    <a-marker-camera preset="hiro"></a-marker-camera>
+  <canvas id="xrCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('xrCanvas');
+    const gl = canvas.getContext('webgl', { xrCompatible: true });
 
-    <!-- 3Dオブジェクトの配置 -->
-    <a-entity id="dynamicObject" geometry="primitive: box; height: 0.5; width: 0.5; depth: 0.5;" material="color: blue;"></a-entity>
-  </a-scene>
+    let xrSession;
+    let xrRefSpace;
+
+    // WebXRセッションの開始
+    async function startWebXR() {
+      if (!navigator.xr) {
+        alert('WebXR is not supported on this browser.');
+        return;
+      }
+
+      xrSession = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['local', 'hit-test'],
+      });
+
+      xrSession.updateRenderState({
+        baseLayer: new XRWebGLLayer(xrSession, gl),
+      });
+
+      xrRefSpace = await xrSession.requestReferenceSpace('local');
+      xrSession.requestAnimationFrame(onXRFrame);
+    }
+
+    // XRフレーム処理
+    function onXRFrame(time, frame) {
+      const session = frame.session;
+      const pose = frame.getViewerPose(xrRefSpace);
+
+      if (pose) {
+        const hitTestResults = frame.getHitTestResults();
+        if (hitTestResults.length > 0) {
+          const hitPose = hitTestResults[0].getPose(xrRefSpace);
+          placeObject(hitPose.transform.position);
+        }
+      }
+
+      session.requestAnimationFrame(onXRFrame);
+    }
+
+    // オブジェクトの空間配置
+    function placeObject(position) {
+      console.log('Object placed at:', position);
+      // Three.jsやA-Frameを使って描画するコードを追加可能
+    }
+
+    startWebXR();
+  </script>
 </body>
 </html>
