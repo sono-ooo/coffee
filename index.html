@@ -1,65 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebXR Anchors</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { width: 100%; height: 100%; display: block; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コーヒーガチャ</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #coffee-img { width: 200px; height: 200px; object-fit: cover; }
+        .card { border: 1px solid #ddd; padding: 20px; display: inline-block; margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
 </head>
 <body>
-  <canvas id="xrCanvas"></canvas>
-  <script>
-    const canvas = document.getElementById('xrCanvas');
-    const gl = canvas.getContext('webgl', { xrCompatible: true });
+    <h1>コーヒーガチャ</h1>
+    <button onclick="rollGacha()">ガチャを回す</button>
+    <div id="result" class="card" style="display: none;">
+        <h2 id="coffee-name"></h2>
+        <img id="coffee-img" src="" alt="コーヒー豆">
+        <p id="coffee-price"></p>
+        <a id="coffee-link" href="#" target="_blank">商品ページへ</a>
+    </div>
 
-    let xrSession;
-    let xrRefSpace;
+    <script>
+        const coffeeList = [
+            { name: "ブルーマウンテンNo.1", img: "https://via.placeholder.com/200", price: "¥3,500", link: "https://www.amazon.co.jp/" },
+            { name: "コロンビア スプレモ", img: "https://via.placeholder.com/200", price: "¥2,200", link: "https://www.amazon.co.jp/" },
+            { name: "エチオピア イルガチェフェ", img: "https://via.placeholder.com/200", price: "¥1,800", link: "https://www.amazon.co.jp/" }
+        ];
 
-    // WebXRセッションの開始
-    async function startWebXR() {
-      if (!navigator.xr) {
-        alert('WebXR is not supported on this browser.');
-        return;
-      }
-
-      xrSession = await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['local', 'hit-test'],
-      });
-
-      xrSession.updateRenderState({
-        baseLayer: new XRWebGLLayer(xrSession, gl),
-      });
-
-      xrRefSpace = await xrSession.requestReferenceSpace('local');
-      xrSession.requestAnimationFrame(onXRFrame);
-    }
-
-    // XRフレーム処理
-    function onXRFrame(time, frame) {
-      const session = frame.session;
-      const pose = frame.getViewerPose(xrRefSpace);
-
-      if (pose) {
-        const hitTestResults = frame.getHitTestResults();
-        if (hitTestResults.length > 0) {
-          const hitPose = hitTestResults[0].getPose(xrRefSpace);
-          placeObject(hitPose.transform.position);
+        function rollGacha() {
+            const randomIndex = Math.floor(Math.random() * coffeeList.length);
+            const coffee = coffeeList[randomIndex];
+            
+            document.getElementById("coffee-name").textContent = coffee.name;
+            document.getElementById("coffee-img").src = coffee.img;
+            document.getElementById("coffee-price").textContent = coffee.price;
+            document.getElementById("coffee-link").href = coffee.link;
+            document.getElementById("result").style.display = "block";
         }
-      }
-
-      session.requestAnimationFrame(onXRFrame);
-    }
-
-    // オブジェクトの空間配置
-    function placeObject(position) {
-      console.log('Object placed at:', position);
-      // Three.jsやA-Frameを使って描画するコードを追加可能
-    }
-
-    startWebXR();
-  </script>
+    </script>
 </body>
 </html>
