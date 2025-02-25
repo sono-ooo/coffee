@@ -23,16 +23,16 @@
 
     <script>
         const appId = e06e2a5afcf14b52139c1fb6c58e9dbc; // ここに自分の楽天APIキーを入れる
-        //const apiUrl = `https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706?applicationId=${appId}&keyword=%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&hits=30&format=json`;
-        const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+        const proxyUrl = "https://cors-anywhere.herokuapp.com/"; // CORS回避用
         const apiUrl = `${proxyUrl}https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706?applicationId=${appId}&keyword=%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&hits=30&format=json`;
+
         async function rollGacha() {
             try {
                 const response = await fetch(apiUrl);
                 const data = await response.json();
                 const items = data.Items;
 
-                if (items.length === 0) {
+                if (!items || items.length === 0) {
                     alert("コーヒー豆が見つかりませんでした。");
                     return;
                 }
@@ -47,6 +47,7 @@
                 document.getElementById("result").style.display = "block";
             } catch (error) {
                 console.error("エラーが発生しました", error);
+                alert("データの取得に失敗しました。");
             }
         }
     </script>
