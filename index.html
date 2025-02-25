@@ -23,8 +23,9 @@
 
     <script>
         const appId = e06e2a5afcf14b52139c1fb6c58e9dbc; // ここに自分の楽天APIキーを入れる
-        const apiUrl = `https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706?applicationId=${appId}&keyword=%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&hits=30&format=json`;
-
+        //const apiUrl = `https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706?applicationId=${appId}&keyword=%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&hits=30&format=json`;
+        const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+        const apiUrl = `${proxyUrl}https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706?applicationId=${appId}&keyword=%E3%82%B3%E3%83%BC%E3%83%92%E3%83%BC%E8%B1%86&hits=30&format=json`;
         async function rollGacha() {
             try {
                 const response = await fetch(apiUrl);
